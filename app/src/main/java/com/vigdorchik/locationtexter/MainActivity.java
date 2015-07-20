@@ -1,63 +1,81 @@
 package com.vigdorchik.locationtexter;
 
+import android.app.Activity;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
-import android.support.v7.app.ActionBarActivity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.NumberPicker;
+import android.widget.Switch;
 import android.widget.TextView;
 
+import java.util.HashSet;
 
-public class MainActivity extends ActionBarActivity {
+public class MainActivity extends Activity {
 
     static final int PICK_CONTACT_REQUEST = 1;  // The request code
-
-    public void pickContact(View view) {
-        Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
-        pickContactIntent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE); // Show user only contacts w/ phone numbers
-        startActivityForResult(pickContactIntent, PICK_CONTACT_REQUEST);
-    }
+    SharedPreferences sharedPref;
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        // Check which request it is that we're responding to
         if (requestCode == PICK_CONTACT_REQUEST) {
-            // Make sure the request was successful
             if (resultCode == RESULT_OK) {
-                // Get the URI that points to the selected contact
                 Uri contactUri = data.getData();
-                // We only need the NUMBER column, because there will be only one row in the result
-                String[] numberProjection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
 
-                // Perform the query on the contact to get the NUMBER column
-                // We don't need a selection or sort order (there's only one result for the given URI)
-                // CAUTION: The query() method should be called from a separate thread to avoid blocking
-                // your app's UI thread. (For simplicity of the sample, this code doesn't do that.)
-                // Consider using CursorLoader to perform the query.
+                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER, ContactsContract.Contacts.DISPLAY_NAME};
+
                 Cursor cursorNumber = getContentResolver()
-                        .query(contactUri, numberProjection, null, null, null);
+                        .query(contactUri, projection, null, null, null);
                 cursorNumber.moveToFirst();
 
-                // Retrieve the phone number from the NUMBER column
-                int column = cursorNumber.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                String number = cursorNumber.getString(column);
-                cursorNumber.close();
-                number = number + ", ";
+                String number = cursorNumber.getString(cursorNumber.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER));
+                String name = cursorNumber.getString(cursorNumber.getColumnIndex(ContactsContract.Contacts.DISPLAY_NAME));
 
-                // TODO: add contact to list
-                ((TextView) findViewById(R.id.contactsList)).append(number);
+                cursorNumber.close();
+
+                addContact(name, number);
+                matchPreferences();
             }
         }
     }
 
-    public void clearContacts(View view) {
-        ((TextView) findViewById(R.id.contactsList)).setText("");
-        //TODO: delete from preferances
+    public void addContact(String name, String number) {
+        HashSet<String> contacts = (HashSet<String>) sharedPref.getStringSet(getString(R.string.preference_contacts_key), new HashSet<String>());
+        HashSet<String> new_contacts = new HashSet<>();
+        for (String s : contacts) {
+            new_contacts.add(s);
+        }
+        new_contacts.add(encodeContact(name, number));
+        sharedPref.edit().putStringSet(getString(R.string.preference_contacts_key), new_contacts).apply();
+    }
+
+    public void matchPreferences() {
+        NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker);
+        np.setValue(sharedPref.getInt(getString(R.string.preference_interval_key), 20));
+        HashSet<String> contacts = (HashSet<String>) sharedPref.getStringSet(getString(R.string.preference_contacts_key), new HashSet<String>());
+
+        TextView contact_list = (TextView) findViewById(R.id.contactsList);
+        contact_list.setText("");
+        for (String s : contacts) {
+            Contact c = decodeContact(s);
+            contact_list.append(c.getName() + ", ");
+        }
+    }
+
+    public static String encodeContact(String name, String number) {
+        return name + ";" + number;
+    }
+
+    public static Contact decodeContact(String str) {
+        String[] strs = str.split(";");
+        return new Contact(strs[0], strs[1]);
     }
 
     @Override
@@ -65,32 +83,71 @@ public class MainActivity extends ActionBarActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        sharedPref = getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+
         NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker);
         np.setMinValue(1);
         np.setMaxValue(60);
         np.setWrapSelectorWheel(true);
-        np.setValue(20);
+        np.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                sharedPref.edit().putInt(getString(R.string.preference_interval_key), newVal).apply();
+            }
+        });
+        matchPreferences();
+        Switch sw = (Switch) findViewById(R.id.toggle_service);
+        if (isServiceRunning(TextService.class)) {
+            sw.setChecked(true);
+        }
+    }
+
+    public void pickContact(View view) {
+        Intent pickContactIntent = new Intent(Intent.ACTION_PICK, Uri.parse("content://contacts"));
+        pickContactIntent.setType(ContactsContract.CommonDataKinds.Phone.CONTENT_TYPE);
+        startActivityForResult(pickContactIntent, PICK_CONTACT_REQUEST);
+    }
+
+    public void toggleService(View view) {
+        Switch sw = (Switch) view;
+        Intent intent = new Intent(this, TextService.class);
+        if (sw.isChecked()) {
+            startService(intent);
+        } else {
+            stopService(intent);
+        }
+    }
+
+    public void clearContacts(View view) {
+        sharedPref.edit().putStringSet(getString(R.string.preference_contacts_key), new HashSet<String>()).apply();
+        matchPreferences();
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.menu_main, menu);
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        // Handle action bar item clicks here. The action bar will
-        // automatically handle clicks on the Home/Up button, so long
-        // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
+            }
+        }
+        return false;
     }
 }

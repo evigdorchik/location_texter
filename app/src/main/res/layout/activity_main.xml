@@ -13,7 +13,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignLeft="@+id/numberPicker"
-        android:layout_alignStart="@+id/numberPicker" />
+        android:layout_alignStart="@+id/numberPicker"
+        android:onClick="toggleService"/>
 
     <NumberPicker
         android:id="@+id/numberPicker"
