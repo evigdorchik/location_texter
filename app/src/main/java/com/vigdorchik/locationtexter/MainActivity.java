@@ -10,6 +10,7 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.NumberPicker;
+import android.widget.TextView;
 
 
 public class MainActivity extends ActionBarActivity {
@@ -31,24 +32,36 @@ public class MainActivity extends ActionBarActivity {
                 // Get the URI that points to the selected contact
                 Uri contactUri = data.getData();
                 // We only need the NUMBER column, because there will be only one row in the result
-                String[] projection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
+                String[] numberProjection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
+//                String[] nameProjection = {ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME};
 
                 // Perform the query on the contact to get the NUMBER column
                 // We don't need a selection or sort order (there's only one result for the given URI)
                 // CAUTION: The query() method should be called from a separate thread to avoid blocking
                 // your app's UI thread. (For simplicity of the sample, this code doesn't do that.)
                 // Consider using CursorLoader to perform the query.
-                Cursor cursor = getContentResolver()
-                        .query(contactUri, projection, null, null, null);
-                cursor.moveToFirst();
+                Cursor cursorNumber = getContentResolver()
+                        .query(contactUri, numberProjection, null, null, null);
+                cursorNumber.moveToFirst();
+//                Cursor cursorName = getContentResolver()
+//                        .query(contactUri, nameProjection, null, null, null);
+//                cursorName.moveToFirst();
 
                 // Retrieve the phone number from the NUMBER column
-                int column = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
-                String number = cursor.getString(column);
+                int column = cursorNumber.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
+                String number = cursorNumber.getString(column);
+                cursorNumber.close();
+                number = number + ", ";
 
                 // TODO: add contact to list
+                ((TextView) findViewById(R.id.contactsList)).append(number);
             }
         }
+    }
+
+    public void clearContacts (View view) {
+        ((TextView) findViewById(R.id.contactsList)).setText("");
+        //TODO: delete from preferances
     }
 
     @Override

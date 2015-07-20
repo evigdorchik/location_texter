@@ -23,13 +23,39 @@
         android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp" />
 
-    <Button
+    <LinearLayout
+        android:id="@+id/contactsControl"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/numberPicker"
+        android:layout_below="@+id/numberPicker"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp"
-        android:onClick="pickContact"
-        android:text="Choose a Contact" />
+        android:orientation="horizontal">
+
+        <Button
+            android:id="@+id/contactPicker"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="pickContact"
+            android:text="Choose a Contact" />
+
+        <Button
+            android:id="@+id/clearButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:onClick="clearContacts"
+            android:text="Clear" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/contactsList"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/contactsControl"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="5dp"
+        android:editable="false">
+
+    </TextView>
 
 </RelativeLayout>
