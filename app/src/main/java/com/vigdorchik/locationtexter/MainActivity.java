@@ -20,8 +20,50 @@ import java.util.HashSet;
 
 public class MainActivity extends Activity {
 
-    static final int PICK_CONTACT_REQUEST = 1;  // The request code
+    static final int PICK_CONTACT_REQUEST = 1;
     SharedPreferences sharedPref;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+
+        sharedPref = getSharedPreferences(
+                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
+
+        NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker);
+        np.setMinValue(1);
+        np.setMaxValue(60);
+        np.setWrapSelectorWheel(true);
+        np.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
+            @Override
+            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
+                sharedPref.edit().putInt(getString(R.string.preference_interval_key), newVal).apply();
+            }
+        });
+        matchPreferences();
+        Switch sw = (Switch) findViewById(R.id.toggle_service);
+        if (isServiceRunning(TextService.class)) {
+            sw.setChecked(true);
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
@@ -78,29 +120,14 @@ public class MainActivity extends Activity {
         return new Contact(strs[0], strs[1]);
     }
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
-
-        sharedPref = getSharedPreferences(
-                getString(R.string.preference_file_key), Context.MODE_PRIVATE);
-
-        NumberPicker np = (NumberPicker) findViewById(R.id.numberPicker);
-        np.setMinValue(1);
-        np.setMaxValue(60);
-        np.setWrapSelectorWheel(true);
-        np.setOnValueChangedListener(new NumberPicker.OnValueChangeListener() {
-            @Override
-            public void onValueChange(NumberPicker picker, int oldVal, int newVal) {
-                sharedPref.edit().putInt(getString(R.string.preference_interval_key), newVal).apply();
+    private boolean isServiceRunning(Class<?> serviceClass) {
+        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
+        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
+            if (serviceClass.getName().equals(service.service.getClassName())) {
+                return true;
             }
-        });
-        matchPreferences();
-        Switch sw = (Switch) findViewById(R.id.toggle_service);
-        if (isServiceRunning(TextService.class)) {
-            sw.setChecked(true);
         }
+        return false;
     }
 
     public void pickContact(View view) {
@@ -122,32 +149,5 @@ public class MainActivity extends Activity {
     public void clearContacts(View view) {
         sharedPref.edit().putStringSet(getString(R.string.preference_contacts_key), new HashSet<String>()).apply();
         matchPreferences();
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        int id = item.getItemId();
-
-        if (id == R.id.action_settings) {
-            return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    private boolean isServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-            if (serviceClass.getName().equals(service.service.getClassName())) {
-                return true;
-            }
-        }
-        return false;
     }
 }

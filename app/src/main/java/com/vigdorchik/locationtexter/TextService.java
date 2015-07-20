@@ -47,46 +47,46 @@ public class TextService extends Service implements LocationListener {
     private int minutes = 20;
     private String provider_info;
 
+    @Override
+    public void onCreate() {
+        HandlerThread thread = new HandlerThread("ServiceStartArguments",
+                Process.THREAD_PRIORITY_BACKGROUND);
+        thread.start();
+
+        // Get the HandlerThread's Looper and use it for our Handler
+        mServiceLooper = thread.getLooper();
+        mServiceHandler = new ServiceHandler(mServiceLooper);
+
+        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE);
+        HashSet<String> contacts = (HashSet<String>) sharedPref.getStringSet(getString(R.string.preference_contacts_key), new HashSet<String>());
+        minutes = sharedPref.getInt(getString(R.string.preference_interval_key), minutes);
+
+        contact_numbers = new ArrayList<>();
+        for (String s : contacts) {
+            contact_numbers.add(MainActivity.decodeContact(s).getNumber());
+        }
+        getLocation();
+    }
+
     public void getLocation() {
 
         try {
             locationManager = (LocationManager) getSystemService(LOCATION_SERVICE);
-
-            //getting GPS status
             isGPSEnabled = locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER);
-
-            //getting network status
             isNetworkEnabled = locationManager.isProviderEnabled(LocationManager.NETWORK_PROVIDER);
-
-            // Try to get location if you GPS Service is enabled
             if (isGPSEnabled) {
                 this.isGPSTrackingEnabled = true;
 
                 Log.d(TAG, "Application uses GPS Service");
-
-                /*
-                 * This provider determines location using
-                 * satellites. Depending on conditions, this provider may take a while to return
-                 * a location fix.
-                 */
-
                 provider_info = LocationManager.GPS_PROVIDER;
 
             } else if (isNetworkEnabled) { // Try to get location if you Network Service is enabled
                 this.isGPSTrackingEnabled = true;
 
                 Log.d(TAG, "Application uses Network State to get GPS coordinates");
-
-                /*
-                 * This provider determines location based on
-                 * availability of cell tower and WiFi access points. Results are retrieved
-                 * by means of a network lookup.
-                 */
                 provider_info = LocationManager.NETWORK_PROVIDER;
 
             }
-
-            // Application can use GPS or Network Provider
             if (!provider_info.isEmpty()) {
                 locationManager.requestLocationUpdates(
                         provider_info,
@@ -110,31 +110,6 @@ public class TextService extends Service implements LocationListener {
             latitude = location.getLatitude();
             longitude = location.getLongitude();
         }
-    }
-
-    @Override
-    public void onCreate() {
-        // Start up the thread running the service.  Note that we create a
-        // separate thread because the service normally runs in the process's
-        // main thread, which we don't want to block.  We also make it
-        // background priority so CPU-intensive work will not disrupt our UI.
-        HandlerThread thread = new HandlerThread("ServiceStartArguments",
-                Process.THREAD_PRIORITY_BACKGROUND);
-        thread.start();
-
-        // Get the HandlerThread's Looper and use it for our Handler
-        mServiceLooper = thread.getLooper();
-        mServiceHandler = new ServiceHandler(mServiceLooper);
-
-        SharedPreferences sharedPref = this.getSharedPreferences(getString(R.string.preference_file_key), MODE_PRIVATE);
-        HashSet<String> contacts = (HashSet<String>) sharedPref.getStringSet(getString(R.string.preference_contacts_key), new HashSet<String>());
-        minutes = sharedPref.getInt(getString(R.string.preference_interval_key), minutes);
-
-        contact_numbers = new ArrayList<>();
-        for (String s : contacts) {
-            contact_numbers.add(MainActivity.decodeContact(s).getNumber());
-        }
-        getLocation();
     }
 
     @Override
