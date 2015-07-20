@@ -29,7 +29,7 @@
         android:layout_below="@id/numberPicker"
         android:layout_centerHorizontal="true"
         android:layout_marginTop="50dp"
-        android:text="Choose a Contact"
-        android:onClick="pickContact"/>
+        android:onClick="pickContact"
+        android:text="Choose a Contact" />
 
 </RelativeLayout>
