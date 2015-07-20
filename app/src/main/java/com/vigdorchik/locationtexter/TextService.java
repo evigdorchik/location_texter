@@ -7,27 +7,13 @@ import android.os.HandlerThread;
 import android.os.IBinder;
 import android.os.Looper;
 import android.os.Message;
-import android.widget.Toast;
 import android.os.Process;
+import android.widget.Toast;
 
 public class TextService extends Service {
     private Looper mServiceLooper;
     private ServiceHandler mServiceHandler;
     private int minutes = 20;
-
-    // Handler that receives messages from the thread
-    private final class ServiceHandler extends Handler {
-        public ServiceHandler(Looper looper) {
-            super(looper);
-        }
-        @Override
-        public void handleMessage(Message msg) {
-            // Normally we would do some work here, like download a file.
-            // For our sample, we just sleep for 5 seconds.
-
-            sendEmptyMessageAtTime(0, System.currentTimeMillis() + minutes * 60000);
-        }
-    }
 
     @Override
     public void onCreate() {
@@ -68,5 +54,20 @@ public class TextService extends Service {
     @Override
     public IBinder onBind(Intent intent) {
         return null;
+    }
+
+    // Handler that receives messages from the thread
+    private final class ServiceHandler extends Handler {
+        public ServiceHandler(Looper looper) {
+            super(looper);
+        }
+
+        @Override
+        public void handleMessage(Message msg) {
+            // Normally we would do some work here, like download a file.
+            // For our sample, we just sleep for 5 seconds.
+
+            sendEmptyMessageAtTime(0, System.currentTimeMillis() + minutes * 60000);
+        }
     }
 }
