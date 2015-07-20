@@ -3,9 +3,9 @@ package com.vigdorchik.locationtexter;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.app.ActionBarActivity;
-import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -33,7 +33,6 @@ public class MainActivity extends ActionBarActivity {
                 Uri contactUri = data.getData();
                 // We only need the NUMBER column, because there will be only one row in the result
                 String[] numberProjection = {ContactsContract.CommonDataKinds.Phone.NUMBER};
-//                String[] nameProjection = {ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME};
 
                 // Perform the query on the contact to get the NUMBER column
                 // We don't need a selection or sort order (there's only one result for the given URI)
@@ -43,9 +42,6 @@ public class MainActivity extends ActionBarActivity {
                 Cursor cursorNumber = getContentResolver()
                         .query(contactUri, numberProjection, null, null, null);
                 cursorNumber.moveToFirst();
-//                Cursor cursorName = getContentResolver()
-//                        .query(contactUri, nameProjection, null, null, null);
-//                cursorName.moveToFirst();
 
                 // Retrieve the phone number from the NUMBER column
                 int column = cursorNumber.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER);
@@ -59,7 +55,7 @@ public class MainActivity extends ActionBarActivity {
         }
     }
 
-    public void clearContacts (View view) {
+    public void clearContacts(View view) {
         ((TextView) findViewById(R.id.contactsList)).setText("");
         //TODO: delete from preferances
     }
